@@ -1,4 +1,4 @@
-aws-cfn-mongodb
-===============
+MongoDB Tools/Templates for AWS CloudFormation
+==============================================
 
-AWS CloudFormation templates and setup tools for MongoDB
+This repo is intended to hold tools/templates for deploying MongoDB via AWS CloudFormation

@@ -58,9 +58,6 @@ tar zxf mms-monitoring-agent.tar.gz
 mv mms-agent /usr/local/
 rm mms-monitoring-agent.tar.gz
 
-tar zxf /usr/local/mms-monitoring-agent.tar.gz
-rm mms-monitoring-agent
-
 ## Install MMS Agent Support
 yum install -y gcc python-devel munin-node
 easy_install pymongo

@@ -1,0 +1,125 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+
+    "Description" : "MongoDB 2.4 with 1000 IOPS",
+
+    "Parameters" : {
+        "KeyPairName" : {
+            "Description" : "EC2 KeyPair to enable SSH access",
+            "Type" : "String"
+        },
+
+        "SecurityGroupName" : {
+            "Description" : "EC2 Security Group to control port access",
+            "Type" : "String"
+        },
+
+        "InstanceType" : {
+            "Type" : "String",
+            "Default" : "m1.large",
+            "AllowedValues" : [ "m1.large", "m1.xlarge", "m2.4xlarge" ],
+            "Description" : "EC2 instance type (e.g. m1.large, m1.xlarge, m2.xlarge)"
+        }
+    },
+
+    "Mappings" : {
+        "InstanceTypeArch" : {
+            "m1.large"    : { "Arch" : "64" },
+            "m1.xlarge"   : { "Arch" : "64" },
+            "m2.4xlarge"  : { "Arch" : "64" }
+        },
+
+        "RegionImageZone" : {
+            "us-east-1"      : { "64" : "ami-35792c5c" },
+            "us-west-2"      : { "64" : "ami-3ac64a0a" },
+            "us-west-1"      : { "64" : "ami-e78cd4a2" },
+            "eu-west-1"      : { "64" : "ami-f9231b8d" },
+            "ap-southeast-1" : { "64" : "ami-be3374ec" },
+            "ap-northeast-1" : { "64" : "ami-e47acbe5" },
+            "sa-east-1"      : { "64" : "ami-a6855bbb" }
+         }
+     },
+
+    "Resources" : {
+        "MongoDBInstance" : {
+            "Type" : "AWS::EC2::Instance",
+            "Metadata" : {
+                "AWS::CloudFormation::Init" : {
+                    "config" : {
+                        "files" : {
+                            "/etc/yum.repos.d/mongodb.repo" : {
+                                "content" : { "Fn::Join" : ["", [
+                                    "[MongoDB]\n",
+                                    "name=MongoDB Repository\n",
+                                    "baseurl=http://downloads-distro.mongodb.org/repo/redhat/os/x86_64\n",
+                                    "gpgcheck=0\n"
+                                ] ] },
+                                "mode" : "000644",
+                                "owner" : "root",
+                                "group" : "root"
+                            }
+                        },
+                        "sources" : {
+                            "/tmp/aws-cfn-mongodb/" : "https://github.com/crcsmnky/aws-cfn-mongodb/tarball/master"
+                        }
+                    }
+                }
+            },
+
+            "Properties" : {
+                "InstanceType" : { "Ref" : "InstanceType" },
+                "ImageId" : { "Fn::FindInMap" : [ "RegionImageZone", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "InstanceTypeArch", { "Ref" : "InstanceType" }, "Arch" ] } ] },
+                "SecurityGroups" : [ { "Ref" : "SecurityGroupName" } ],
+                "KeyName" : { "Ref" : "KeyPairName" },
+                "EbsOptimized" : "true",
+                "BlockDeviceMappings" : [
+                    {
+                        "DeviceName" : "/dev/xvdf",
+                        "Ebs" : {
+                            "VolumeSize" : "200",
+                            "Iops" : "1000",
+                            "VolumeType" : "io1",
+                            "DeleteOnTermination" : "false"
+                        }
+                    },
+                    {
+                        "DeviceName" : "/dev/xvdg",
+                        "Ebs" : {
+                            "VolumeSize" : "25",
+                            "Iops" : "250",
+                            "VolumeType" : "io1",
+                            "DeleteOnTermination" : "false"
+                        }
+                    },
+                    {
+                        "DeviceName" : "/dev/xvdh",
+                        "Ebs" : {
+                            "VolumeSize" : "10",
+                            "Iops" : "100",
+                            "VolumeType" : "io1",
+                            "DeleteOnTermination" : "false"
+                        }
+                    }
+                ],
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                    "#!/bin/bash\n",
+                    "yum update -y aws-cfn-bootstrap\n",
+
+                    "## Initialize CloudFormation bits\n",
+                    "/opt/aws/bin/cfn-init -v -s ", { "Ref" : "AWS::StackName" }, " -r MongoDBInstance",
+                    "   --region ", { "Ref" : "AWS::Region" }, " > /tmp/cfn-init.log 2>&1\n",
+
+                    "sh /tmp/aws-cfn-mongodb/instance-setup.sh > /tmp/instance-setup.log 2>&1\n"
+                ] ] } }
+            }
+        }
+    },
+
+    "Outputs" : {
+        "InstanceName" : {
+            "Value" : { "Fn::GetAtt" : [ "MongoDBInstance", "PublicDnsName" ] },
+            "Description" : "MongoDB 2.4 with 1000 IOPS Public DNS"
+        }
+    }
+}

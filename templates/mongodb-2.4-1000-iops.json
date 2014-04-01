@@ -26,17 +26,23 @@
         "InstanceTypeArch" : {
             "m1.large"    : { "Arch" : "64" },
             "m1.xlarge"   : { "Arch" : "64" },
-            "m2.4xlarge"  : { "Arch" : "64" }
+            "m2.xlarge"   : { "Arch" : "64" },
+            "m2.2xlarge"  : { "Arch" : "64" },
+            "m2.4xlarge"  : { "Arch" : "64" },
+            "m3.large"    : { "Arch" : "64" },
+            "m3.xlarge"   : { "Arch" : "64" },
+            "m3.2xlarge"  : { "Arch" : "64" }
         },
 
         "RegionImageZone" : {
-            "us-east-1"      : { "64" : "ami-35792c5c" },
-            "us-west-2"      : { "64" : "ami-3ac64a0a" },
-            "us-west-1"      : { "64" : "ami-e78cd4a2" },
-            "eu-west-1"      : { "64" : "ami-f9231b8d" },
-            "ap-southeast-1" : { "64" : "ami-be3374ec" },
-            "ap-northeast-1" : { "64" : "ami-e47acbe5" },
-            "sa-east-1"      : { "64" : "ami-a6855bbb" }
+            "us-east-1"      : { "64" : "ami-2f726546" },
+            "us-west-2"      : { "64" : "ami-b8f69f88" },
+            "us-west-1"      : { "64" : "ami-84f1cfc1" },
+            "eu-west-1"      : { "64" : "ami-a921dfde" },
+            "ap-southeast-1" : { "64" : "ami-787c2c2a" },
+            "ap-northeast-1" : { "64" : "ami-a1bec3a0" },
+            "ap-southeast-2" : { "64" : "ami-0bc85031" },
+            "sa-east-1"      : { "64" : "ami-89de7c94" }
          }
      },
 

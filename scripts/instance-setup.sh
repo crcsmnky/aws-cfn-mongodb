@@ -4,6 +4,7 @@ while [ ! -e /dev/xvdg ]; do echo waiting for /dev/xvdg to attach; sleep 5; done
 while [ ! -e /dev/xvdh ]; do echo waiting for /dev/xvdh to attach; sleep 5; done
 
 ## Install MongoDB
+yum -y update
 yum -y install mongo-10gen-server > /tmp/yum-mongo.log 2>&1
 
 ## Setup Storage

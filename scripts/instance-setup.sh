@@ -38,13 +38,13 @@ echo 'net.ipv4.tcp_keepalive_time = 300' >> /etc/sysctl.conf
 echo 0 > /proc/sys/vm/zone_reclaim_mode
 echo 300 > /proc/sys/net/ipv4/tcp_keepalive_time
 
-echo '* soft nofile 64000' >> /etc/security/limits.conf
-echo '* hard nofile 64000' >> /etc/security/limits.conf
-echo '* soft nproc 32000' >> /etc/security/limits.conf
-echo '* hard nproc 32000' >> /etc/security/limits.conf
+echo 'mongod soft nofile 64000' >> /etc/security/limits.conf
+echo 'mongod hard nofile 64000' >> /etc/security/limits.conf
+echo 'mongod soft nproc 32000' >> /etc/security/limits.conf
+echo 'mongod hard nproc 32000' >> /etc/security/limits.conf
 
-echo '* soft nproc 32000' >> /etc/security/limits.d/90-nproc.conf
-echo '* hard nproc 32000' >> /etc/security/limits.d/90-nproc.conf
+echo 'mongod soft nproc 32000' >> /etc/security/limits.d/90-nproc.conf
+echo 'mongod hard nproc 32000' >> /etc/security/limits.d/90-nproc.conf
 
 echo 'ACTION==\"add\" KERNEL==\"xvdf\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
 echo 'ACTION==\"add\" KERNEL==\"xvdg\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules

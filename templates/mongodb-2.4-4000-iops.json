@@ -116,7 +116,7 @@
                     "/opt/aws/bin/cfn-init -v -s ", { "Ref" : "AWS::StackName" }, " -r MongoDBInstance",
                     "   --region ", { "Ref" : "AWS::Region" }, " > /tmp/cfn-init.log 2>&1\n",
 
-                    "sh /tmp/aws-cfn-mongodb/instance-setup.sh > /tmp/instance-setup.log 2>&1\n"
+                    "sh /tmp/aws-cfn-mongodb/scripts/instance-setup.sh > /tmp/instance-setup.log 2>&1\n"
                 ] ] } }
             }
         }

@@ -1,11 +1,11 @@
-# CFN Tools for MongoDB on AWS
+# MongoDB on AWS using CloudFormation
 
-Tools for deploying [MongoDB](http://www.mongodb.org) on [Amazon Web Services](http://aws.amazon.com) using [CloudFormation](http://aws.amazon.com/cloudformation/).
+This repo contains scripts and sample templates to deploy [MongoDB](http://www.mongodb.org) to [Amazon Web Services](http://aws.amazon.com) using [CloudFormation](http://aws.amazon.com/cloudformation/).
 
 ## Resources
-`scripts`: scripts that configure MongoDB instances against [documented best practices](http://docs.mongodb.org/ecosystem/platforms/amazon-ec2/#deploy-mongodb-on-ec2)
+`scripts`: Python scripts that build, deploy, test, and package MongoDB for the [AWS Marketplace](http://aws.amazon.com/marketplace). Instances are configured using [documented best practices](http://docs.mongodb.org/ecosystem/platforms/amazon-ec2/#deploy-mongodb-on-ec2).
 
-`templates`: CloudFormation templates to bootstrap individual EC2 instances
+`templates`: (DEPRECATED/BROKEN) Sample CloudFormation templates to bootstrap individual EC2 instances
 
 ## Usage
 
@@ -13,15 +13,47 @@ Clone the repo:
 
     $ git clone https://github.com/crcsmnky/aws-cfn-mongodb
 
-Install the [AWS command line tools](http://aws.amazon.com/cli/):
+Install requirements:
 
-    $ pip install awscli
+    $ pip install -r requirements.txt
 
-Deploy a CloudFormation template:
+Run the MongoDB Marketplace AMI Builder:
 
-    $ aws cloudformation create-stack --stack-name [NAME] --template-body file://[TEMPLATE FULL PATH] --parameters ParameterKey=SecurityGroupName,ParameterValue=[SECURITY GROUP] ParameterKey=KeyPairName,ParameterValue=[KEY PAIR] ParameterKey=InstanceType,ParameterValue=[INSTANCE TYPE]
+    $ python scripts/build-marketplace-ami.py --iops=1000 --security-group=[groupname] --keypair=[path/to/keypair.pem]
+
+Run the MongoDB Marketplace AMI Cleanup:
+
+    $ python scripts/cleanup.py --instance-id=[instance id]
+
+## Builder Usage
+
+    MongoDB Marketplace AMI Builder
+
+    Build, deploy, test, and package MongoDB AMIs for the AWS Marketplace
+
+    Usage:
+        build-marketplace-ami.py [options] --iops=<iops> --security-group=<group> ... --keypair=<keypath> [--keypair-name=<keyname>]
+        build-marketplace-ami.py --help
+        build-marketplace-ami.py --version
+
+    Arguments:
+        --iops=<iops>               1000, 2000, or 4000 IOPS for data volume
+        --security-group=<group>    Security group name for instance (use multiple times for multiple groups)
+        --keypair=<keypath>         Path to keypair used to setup this instance
+        --keypair-name=<keyname>    Name of keypair used to setup this instance (optional, defaults to basename of keypath)
+
+    Options:
+        -h --help                   Show help
+        --version                   Show version
+        --enterprise                (BROKEN) Builds Marketplace AMI with MongoDB Enterprise
+        --save-template             Saves the generated CloudFormation template to a file
+
+    What This Script Does:
+        build    ## builds CF template, returns template json
+        deploy   ## deploys CF template, returns AWS CloudFormation StackId
+        test     ## tests MongoDB EC2 instance, returns test output
+        package  ## packages MongoDB AMI, returns AMI Id
 
 ## Notes
-- Only m1.large, m1.xlarge, m2.xlarge, m2.2xlarge, m2.4xlarge are supported instance types
-- The templates refer to the source Github repo when pulling the setup script - if you fork the repo, update the script location in the template ([line 63](https://github.com/crcsmnky/aws-cfn-mongodb/blob/master/templates/mongodb-2.4-1000-iops.json#L63))
+- Templates are broken! Do not use!
 

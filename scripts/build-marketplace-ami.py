@@ -17,7 +17,7 @@ Arguments:
 Options:
     -h --help                   Show help
     --version                   Show version
-    --enterprise                Builds Marketplace AMI with MongoDB Enterprise
+    --enterprise                (BROKEN) Builds Marketplace AMI with MongoDB Enterprise
     --save-template             Saves the generated CloudFormation template to a file
 
 What This Script Does:

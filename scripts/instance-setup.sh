@@ -1,11 +1,22 @@
+
+## Send all output to log
+exec 2> /tmp/mongodb-instance-setup.log
+exec >> /tmp/mongodb-instance-setup.log
+
+## Update installed packages
+yum -y update
+
+## Install MongoDB based on included repo
+if [ -f /etc/yum.repos.d/mongodb.repo ]; then
+    yum -y install mongodb-org
+elif [ -f /etc/yum.repos.d/mongodb-enterprise.repo ]; then
+    yum -y install mongodb-enterprise
+fi
+
 ## Waiting for EBS mounts to become available
 while [ ! -e /dev/xvdf ]; do echo waiting for /dev/xvdf to attach; sleep 5; done
 while [ ! -e /dev/xvdg ]; do echo waiting for /dev/xvdg to attach; sleep 5; done
 while [ ! -e /dev/xvdh ]; do echo waiting for /dev/xvdh to attach; sleep 5; done
-
-## Install MongoDB
-yum -y update
-yum -y install mongo-10gen-server > /tmp/yum-mongo.log 2>&1
 
 ## Setup Storage
 mkdir /data /log /journal
@@ -23,6 +34,11 @@ chown mongod:mongod /data /log /journal
 ln -s /journal /data/journal
 
 for i in f g h; do blockdev --setra 32 /dev/xvd$i; done
+
+## Persist read ahead settings
+echo 'ACTION==\"add\" KERNEL==\"xvdf\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
+echo 'ACTION==\"add\" KERNEL==\"xvdg\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
+echo 'ACTION==\"add\" KERNEL==\"xvdh\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
 
 ## Update MongoDB Configuration
 cat <<EOF > /etc/mongod.conf
@@ -45,10 +61,6 @@ echo 'mongod hard nproc 32000' >> /etc/security/limits.conf
 
 echo 'mongod soft nproc 32000' >> /etc/security/limits.d/90-nproc.conf
 echo 'mongod hard nproc 32000' >> /etc/security/limits.d/90-nproc.conf
-
-echo 'ACTION==\"add\" KERNEL==\"xvdf\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
-echo 'ACTION==\"add\" KERNEL==\"xvdg\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
-echo 'ACTION==\"add\" KERNEL==\"xvdh\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
 
 ## Start MongoDB
 service mongod start

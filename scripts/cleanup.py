@@ -33,12 +33,12 @@ def cleanup(instanceid, delete_volumes=True):
     print("### Terminating Instance {instanceid}".format(instanceid=instanceid))
     ec2cn.terminate_instances(instance_ids=[instanceid])
 
-    print("### Waiting for Instance Termination")
+    print("### Waiting for Instance Termination (60s)")
     sleep(60)
 
     if delete_volumes:
         for volume in volumes:
-            print("### Deleting Volume {volumeid}").format(volumeid=v.id)
+            print("### Deleting Volume {volumeid}").format(volumeid=volume.id)
             try:
                 volume.delete()
             except Exception, e:

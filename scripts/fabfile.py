@@ -1,35 +1,56 @@
-from fabric.api import run, env
+from fabric.api import *
 
+@task
 def check_mount_points():
-    run("sudo mount | grep 'xvd'")
+    sudo("mount | grep 'xvd'")
 
+@task
 def check_package_install():
-    run("sudo yum list installed | grep 'mongodb'")
+    sudo("yum list installed | grep 'mongodb'")
 
+@task
 def check_readahead():
-    run("sudo blockdev --report")
+    sudo("blockdev --report")
     run("cat /etc/udev/rules.d/85-ebs.rules")
 
+@task
 def check_config():
     run("cat /etc/mongod.conf")
 
+@task
+def check_datadir():
+    run("ls -l /data")
+
+@task
 def check_keepalive():
     run("grep 'keepalive' /etc/sysctl.conf")
     run("cat /proc/sys/net/ipv4/tcp_keepalive_time")
 
+@task
 def check_zone_reclaim():
     run("cat /proc/sys/vm/zone_reclaim_mode")
 
+@task
 def check_ulimits():
     run("cat /etc/security/limits.conf | grep 'mongod'")
     run("cat /etc/security/limits.d/90-nproc.conf | grep 'mongod'")
 
+@task
+def check_service():
+    sudo("service --status-all | grep mongod")
+
+@task
+def check_chkconfig():
+    sudo("chkconfig | grep mongod")
+
+@task
 def check_mmsagent():
     run("ls -al /usr/local | grep 'mms-agent'")
     run("python -c 'import pymongo'")
 
+@task
 def cleanup():
     run("rm ~/.ssh/authorized_keys")
-    run("sudo rm /root/.ssh/authorized_keys")
+    sudo("rm /root/.ssh/authorized_keys")
     run("cat /dev/null > ~/.bash_history")
     run("history -c")

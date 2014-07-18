@@ -7,7 +7,7 @@ Usage:
     cleanup.py [options] --instance-id=<instance-id>
 
 Arguments:
-    --instance-id=<instance-id>     1000, 2000, or 4000 IOPS for data volume
+    --instance-id=<instance-id>     ID of instance to be deleted (and attached volumes)
 
 Options:
     -h --help                       Show help

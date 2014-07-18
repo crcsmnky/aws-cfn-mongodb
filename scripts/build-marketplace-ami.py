@@ -19,6 +19,9 @@ Options:
     --version                   Show version
     --enterprise                (BROKEN) Builds Marketplace AMI with MongoDB Enterprise
     --save-template             Saves the generated CloudFormation template to a file
+    --skip-tests                Skipds running Fabric tests
+    --skip-package              Skips packaging as AMI
+
 
 What This Script Does:
     build    ## builds CF template, returns template json
@@ -232,14 +235,17 @@ def test_instance(stackid, sshkey):
     fabfile.env.key_filename = sshkey
     fabfile.env.disable_known_hosts = True
 
-    print("### Run Fabric Functions")
+    print("### Run Fabric Checks")
     fabfile.check_mount_points()
     fabfile.check_package_install()
     fabfile.check_readahead()
     fabfile.check_config()
+    fabfile.check_datadir()
     fabfile.check_keepalive()
     fabfile.check_zone_reclaim()
     fabfile.check_ulimits()
+    fabfile.check_service()
+    fabfile.check_chkconfig()
     fabfile.check_mmsagent()
     fabfile.cleanup()
 
@@ -293,6 +299,8 @@ def main():
     iops = int(args['--iops'])
     enterprise = args['--enterprise']
     save_template = args['--save-template']
+    skip_tests = args['--skip-tests']
+    skip_package = args['--skip-package']
 
     print("# MongoDB Marketplace AMI Builder 1.0")
     if enterprise is False:
@@ -332,18 +340,19 @@ def main():
         stackid
     )
 
-    test_instance(
-        stackid,
-        args['--keypair']
-    )
+    if skip_tests is False:
+        test_instance(
+            stackid,
+            args['--keypair']
+        )
 
-    ami_id = package(
-        stackid,
-        iops=iops,
-        enterprise=enterprise
-    )
+    if skip_package is False:
+        ami_id = package(
+            stackid,
+            iops=iops,
+            enterprise=enterprise
+        )
 
-    # share(ami_id)
 
 if __name__ == '__main__':
     main()

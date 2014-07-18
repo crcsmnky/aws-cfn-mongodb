@@ -3,9 +3,8 @@
 This repo contains scripts and sample templates to deploy [MongoDB](http://www.mongodb.org) to [Amazon Web Services](http://aws.amazon.com) using [CloudFormation](http://aws.amazon.com/cloudformation/).
 
 ## Resources
-`scripts`: Python scripts that build, deploy, test, and package MongoDB for the [AWS Marketplace](http://aws.amazon.com/marketplace). Instances are configured using [documented best practices](http://docs.mongodb.org/ecosystem/platforms/amazon-ec2/#deploy-mongodb-on-ec2).
-
-`templates`: (DEPRECATED/BROKEN) Sample CloudFormation templates to bootstrap individual EC2 instances
+- Python scripts that build, deploy, test, and package MongoDB for the [AWS Marketplace](http://aws.amazon.com/marketplace). Instances are configured using [documented best practices](http://docs.mongodb.org/ecosystem/platforms/amazon-ec2/#deploy-mongodb-on-ec2).
+- `templates`: (DEPRECATED/BROKEN) Sample CloudFormation templates to bootstrap individual EC2 instances
 
 ## Usage
 
@@ -47,6 +46,9 @@ Run the MongoDB Marketplace AMI Cleanup:
         --version                   Show version
         --enterprise                (BROKEN) Builds Marketplace AMI with MongoDB Enterprise
         --save-template             Saves the generated CloudFormation template to a file
+        --skip-tests                Skipds running Fabric tests
+        --skip-package              Skips packaging as AMI
+
 
     What This Script Does:
         build    ## builds CF template, returns template json

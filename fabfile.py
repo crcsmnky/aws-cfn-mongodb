@@ -29,6 +29,12 @@ def check_keepalive():
 @task
 def check_zone_reclaim():
     run("cat /proc/sys/vm/zone_reclaim_mode")
+    run("grep 'zone_reclaim_mode' /etc/sysctl.conf")
+
+@task
+def check_thp():
+    run("cat /sys/kernel/mm/transparent_hugepage/enabled")
+    run("cat /sys/kernel/mm/transparent_hugepage/defrag")
 
 @task
 def check_ulimits():
@@ -45,8 +51,7 @@ def check_chkconfig():
 
 @task
 def check_mmsagent():
-    run("ls -al /usr/local | grep 'mms-agent'")
-    run("python -c 'import pymongo'")
+    sudo("yum list installed | grep 'mongodb-mms'")
 
 @task
 def cleanup():

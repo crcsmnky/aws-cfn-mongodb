@@ -36,9 +36,12 @@ ln -s /journal /data/journal
 for i in f g h; do blockdev --setra 32 /dev/xvd$i; done
 
 ## Persist read ahead settings
-echo 'ACTION==\"add\" KERNEL==\"xvdf\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
-echo 'ACTION==\"add\" KERNEL==\"xvdg\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
-echo 'ACTION==\"add\" KERNEL==\"xvdh\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
+# echo 'ACTION==\"add\" KERNEL==\"xvdf\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
+# echo 'ACTION==\"add\" KERNEL==\"xvdg\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
+# echo 'ACTION==\"add\" KERNEL==\"xvdh\" ATTR{bdi/read_ahead_kb}=\"16\"' >> /etc/udev/rules.d/85-ebs.rules
+cat <<EOF>> /etc/udev/rules.d/85-ebs.rules
+SUBSYSTEM=="block", ACTION=="add|change", ATTR{bdi/read_ahead_kb}="16", ATTR{queue/scheduler}="noop"
+EOF
 
 ## Update MongoDB Configuration
 cat <<EOF > /etc/mongod.conf
@@ -50,10 +53,25 @@ EOF
 chkconfig mongod off
 
 ## Update System Settings
-echo 'net.ipv4.tcp_keepalive_time = 300' >> /etc/sysctl.conf
+
+# NUMA
+sed -i '/^kernel/ s/$/ numa=off/g' /etc/grub.conf
+echo 'vm.zone_reclaim_mode = 0' >> /etc/sysctl.conf
 echo 0 > /proc/sys/vm/zone_reclaim_mode
+
+# Transparent HugePages
+if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
+   echo madvise > /sys/kernel/mm/transparent_hugepage/enabled
+fi
+if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
+   echo madvise > /sys/kernel/mm/transparent_hugepage/defrag
+fi
+
+# TCP KeepAlive
+echo 'net.ipv4.tcp_keepalive_time = 300' >> /etc/sysctl.conf
 echo 300 > /proc/sys/net/ipv4/tcp_keepalive_time
 
+# Ulimits
 echo 'mongod soft nofile 64000' >> /etc/security/limits.conf
 echo 'mongod hard nofile 64000' >> /etc/security/limits.conf
 echo 'mongod soft nproc 32000' >> /etc/security/limits.conf
@@ -65,12 +83,6 @@ echo 'mongod hard nproc 32000' >> /etc/security/limits.d/90-nproc.conf
 ## Start MongoDB
 service mongod start
 
-## Unpack MMS Agent
-wget https://mms.mongodb.com/settings/mms-monitoring-agent.tar.gz
-tar zxf mms-monitoring-agent.tar.gz
-mv mms-agent /usr/local/
-rm mms-monitoring-agent.tar.gz
-
-## Install MMS Agent Support
-yum install -y gcc python-devel munin-node
-easy_install pymongo
+## Install MMS Monitoring Agent
+curl -OL https://mms.mongodb.com/download/agent/monitoring/mongodb-mms-monitoring-agent-latest.x86_64.rpm
+rpm -U mongodb-mms-monitoring-agent-latest.x86_64.rpm

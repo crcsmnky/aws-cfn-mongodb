@@ -1,0 +1,239 @@
+{
+    "Mappings": {
+        "RegionAMIMap": {
+            "ap-northeast-1": {
+                "AMI": "ami-c9562fc8"
+            }, 
+            "ap-southeast-1": {
+                "AMI": "ami-b40d5ee6"
+            }, 
+            "ap-southeast-2": {
+                "AMI": "ami-3b4bd301"
+            }, 
+            "eu-west-1": {
+                "AMI": "ami-2918e35e"
+            }, 
+            "sa-east-1": {
+                "AMI": "ami-215dff3c"
+            }, 
+            "us-east-1": {
+                "AMI": "ami-fb8e9292"
+            }, 
+            "us-west-1": {
+                "AMI": "ami-7aba833f"
+            }, 
+            "us-west-2": {
+                "AMI": "ami-043a5034"
+            }
+        }
+    }, 
+    "Outputs": {
+        "MongoDBInstanceDNS": {
+            "Description": "MongoDBInstance Public DNS", 
+            "Value": {
+                "Fn::GetAtt": [
+                    "MongoDBInstance", 
+                    "PublicDnsName"
+                ]
+            }
+        }, 
+        "MongoDBInstanceID": {
+            "Description": "MongoDBInstance ID", 
+            "Value": {
+                "Ref": "MongoDBInstance"
+            }
+        }
+    }, 
+    "Resources": {
+        "MongoDBInstance": {
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/yum.repos.d/mongodb.repo": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "", 
+                                        [
+                                            "[MongoDB]\n", 
+                                            "name=MongoDB Repository\n", 
+                                            "baseurl=http://downloads-distro.mongodb.org/repo/redhat/os/x86_64\n", 
+                                            "gpgcheck=0\n", 
+                                            "enabled=1\n"
+                                        ]
+                                    ]
+                                }, 
+                                "group": "root", 
+                                "mode": "000644", 
+                                "owner": "root"
+                            }
+                        }
+                    }
+                }
+            }, 
+            "Properties": {
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/xvdh", 
+                        "Ebs": {
+                            "DeleteOnTermination": "false", 
+                            "Iops": 150, 
+                            "VolumeSize": 15, 
+                            "VolumeType": "io1"
+                        }
+                    }, 
+                    {
+                        "DeviceName": "/dev/xvdf", 
+                        "Ebs": {
+                            "DeleteOnTermination": "false", 
+                            "Iops": 2000, 
+                            "VolumeSize": 200, 
+                            "VolumeType": "io1"
+                        }
+                    }, 
+                    {
+                        "DeviceName": "/dev/xvdg", 
+                        "Ebs": {
+                            "DeleteOnTermination": "false", 
+                            "Iops": 250, 
+                            "VolumeSize": 25, 
+                            "VolumeType": "io1"
+                        }
+                    }
+                ], 
+                "EbsOptimized": "true", 
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "RegionAMIMap", 
+                        {
+                            "Ref": "AWS::Region"
+                        }, 
+                        "AMI"
+                    ]
+                }, 
+                "InstanceType": "m3.xlarge", 
+                "KeyName": "sandeep-keypair-1", 
+                "SecurityGroups": [
+                    "default"
+                ], 
+                "Tags": [
+                    {
+                        "Key": "Name", 
+                        "Value": "MongoDB 2.6.4 2000 IOPS"
+                    }
+                ], 
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "", 
+                            [
+                                "#!/bin/bash\n", 
+                                "yum update -y aws-cfn-bootstrap\n", 
+                                "/opt/aws/bin/cfn-init -v -s ", 
+                                {
+                                    "Ref": "AWS::StackName"
+                                }, 
+                                " -r ", 
+                                "MongoDBInstance", 
+                                " --region ", 
+                                {
+                                    "Ref": "AWS::Region"
+                                }, 
+                                " > /tmp/cfn-init.log 2>&1\n", 
+                                "\n", 
+                                "## Send all output to log\n", 
+                                "exec 2> /tmp/mongodb-instance-setup.log\n", 
+                                "exec >> /tmp/mongodb-instance-setup.log\n", 
+                                "\n", 
+                                "## Update installed packages\n", 
+                                "yum -y update\n", 
+                                "\n", 
+                                "## Install MongoDB based on included repo\n", 
+                                "if [ -f /etc/yum.repos.d/mongodb.repo ]; then\n", 
+                                "    yum -y install mongodb-org\n", 
+                                "elif [ -f /etc/yum.repos.d/mongodb-enterprise.repo ]; then\n", 
+                                "    yum -y install mongodb-enterprise\n", 
+                                "fi\n", 
+                                "\n", 
+                                "## Waiting for EBS mounts to become available\n", 
+                                "while [ ! -e /dev/xvdf ]; do echo waiting for /dev/xvdf to attach; sleep 5; done\n", 
+                                "while [ ! -e /dev/xvdg ]; do echo waiting for /dev/xvdg to attach; sleep 5; done\n", 
+                                "while [ ! -e /dev/xvdh ]; do echo waiting for /dev/xvdh to attach; sleep 5; done\n", 
+                                "\n", 
+                                "## Setup Storage\n", 
+                                "mkdir /data /log /journal\n", 
+                                "\n", 
+                                "for i in f g h; do mkfs.ext4 /dev/xvd$i; done\n", 
+                                "\n", 
+                                "echo '/dev/xvdf /data ext4 defaults,auto,noatime,noexec 0 0' >> /etc/fstab\n", 
+                                "echo '/dev/xvdg /journal ext4 defaults,auto,noatime,noexec 0 0' >> /etc/fstab\n", 
+                                "echo '/dev/xvdh /log ext4 defaults,auto,noatime,noexec 0 0' >> /etc/fstab\n", 
+                                "\n", 
+                                "for i in data log journal; do mount /$i; done\n", 
+                                "\n", 
+                                "chown mongod:mongod /data /log /journal\n", 
+                                "\n", 
+                                "ln -s /journal /data/journal\n", 
+                                "\n", 
+                                "for i in f g h; do blockdev --setra 32 /dev/xvd$i; done\n", 
+                                "\n", 
+                                "## Persist read ahead settings\n", 
+                                "# echo 'ACTION==\\\"add\\\" KERNEL==\\\"xvdf\\\" ATTR{bdi/read_ahead_kb}=\\\"16\\\"' >> /etc/udev/rules.d/85-ebs.rules\n", 
+                                "# echo 'ACTION==\\\"add\\\" KERNEL==\\\"xvdg\\\" ATTR{bdi/read_ahead_kb}=\\\"16\\\"' >> /etc/udev/rules.d/85-ebs.rules\n", 
+                                "# echo 'ACTION==\\\"add\\\" KERNEL==\\\"xvdh\\\" ATTR{bdi/read_ahead_kb}=\\\"16\\\"' >> /etc/udev/rules.d/85-ebs.rules\n", 
+                                "cat <<EOF>> /etc/udev/rules.d/85-ebs.rules\n", 
+                                "SUBSYSTEM==\"block\", ACTION==\"add|change\", ATTR{bdi/read_ahead_kb}=\"16\", ATTR{queue/scheduler}=\"noop\"\n", 
+                                "EOF\n", 
+                                "\n", 
+                                "## Update MongoDB Configuration\n", 
+                                "cat <<EOF > /etc/mongod.conf\n", 
+                                "logpath=/log/mongod.log\n", 
+                                "fork=true\n", 
+                                "dbpath=/data\n", 
+                                "EOF\n", 
+                                "\n", 
+                                "chkconfig mongod off\n", 
+                                "\n", 
+                                "## Update System Settings\n", 
+                                "\n", 
+                                "# NUMA\n", 
+                                "sed -i '/^kernel/ s/$/ numa=off/g' /etc/grub.conf\n", 
+                                "echo 'vm.zone_reclaim_mode = 0' >> /etc/sysctl.conf\n", 
+                                "echo 0 > /proc/sys/vm/zone_reclaim_mode\n", 
+                                "\n", 
+                                "# Transparent HugePages\n", 
+                                "if test -f /sys/kernel/mm/transparent_hugepage/enabled; then\n", 
+                                "   echo madvise > /sys/kernel/mm/transparent_hugepage/enabled\n", 
+                                "fi\n", 
+                                "if test -f /sys/kernel/mm/transparent_hugepage/defrag; then\n", 
+                                "   echo madvise > /sys/kernel/mm/transparent_hugepage/defrag\n", 
+                                "fi\n", 
+                                "\n", 
+                                "# TCP KeepAlive\n", 
+                                "echo 'net.ipv4.tcp_keepalive_time = 300' >> /etc/sysctl.conf\n", 
+                                "echo 300 > /proc/sys/net/ipv4/tcp_keepalive_time\n", 
+                                "\n", 
+                                "# Ulimits\n", 
+                                "echo 'mongod soft nofile 64000' >> /etc/security/limits.conf\n", 
+                                "echo 'mongod hard nofile 64000' >> /etc/security/limits.conf\n", 
+                                "echo 'mongod soft nproc 32000' >> /etc/security/limits.conf\n", 
+                                "echo 'mongod hard nproc 32000' >> /etc/security/limits.conf\n", 
+                                "\n", 
+                                "echo 'mongod soft nproc 32000' >> /etc/security/limits.d/90-nproc.conf\n", 
+                                "echo 'mongod hard nproc 32000' >> /etc/security/limits.d/90-nproc.conf\n", 
+                                "\n", 
+                                "## Start MongoDB\n", 
+                                "service mongod start\n", 
+                                "\n", 
+                                "## Install MMS Monitoring Agent\n", 
+                                "curl -OL https://mms.mongodb.com/download/agent/monitoring/mongodb-mms-monitoring-agent-latest.x86_64.rpm\n", 
+                                "rpm -U mongodb-mms-monitoring-agent-latest.x86_64.rpm\n"
+                            ]
+                        ]
+                    }
+                }
+            }, 
+            "Type": "AWS::EC2::Instance"
+        }
+    }
+}

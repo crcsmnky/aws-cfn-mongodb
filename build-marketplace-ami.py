@@ -40,7 +40,7 @@ import boto.ec2.blockdevicemapping as ec2bdm
 import os.path
 from time import sleep
 import fabfile
-from datetime import datetime
+import time
 
 
 REGION_AMI_MAP = {
@@ -74,7 +74,7 @@ STORAGE_MAP = {
 }
 
 
-MONGODB_VERSION = "2.6.3"
+MONGODB_VERSION = "2.6.4"
 AWS_MARKETPLACE_ACCOUNT = "679593333241"
 
 
@@ -224,9 +224,15 @@ def test_instance(stackid, sshkey):
     resource = stack.list_resources()[0]
     instanceid = resource.physical_resource_id
 
-    print("### Get Public DNS Name of Instance")
+    print("### Get Instance Info")
     ec2cn = ec2connection.EC2Connection()
     instance = ec2cn.get_only_instances(instanceid)[0]
+
+    print("### Waiting for Reboot (2m)")
+    instance.reboot()
+    sleep(120)
+
+    print("### Get Public DNS Name of Instance")
     dnsname = instance.public_dns_name
 
     print("### Setup Fabric")
@@ -234,6 +240,7 @@ def test_instance(stackid, sshkey):
     fabfile.env.user = 'ec2-user'
     fabfile.env.key_filename = sshkey
     fabfile.env.disable_known_hosts = True
+    fabfile.env.warn_only = True
 
     print("### Run Fabric Checks")
     fabfile.check_mount_points()
@@ -243,6 +250,7 @@ def test_instance(stackid, sshkey):
     fabfile.check_datadir()
     fabfile.check_keepalive()
     fabfile.check_zone_reclaim()
+    fabfile.check_thp()
     fabfile.check_ulimits()
     fabfile.check_service()
     fabfile.check_chkconfig()
@@ -319,16 +327,15 @@ def main():
 
     if save_template is True:
         if enterprise is False:
-            fname = "mongodb-{version}-{iops}-{date}.json".format(
-                version=MONGODB_VERSION,iops=iops,date=datetime.now().isoformat())
+            fname = "mongodb-{version}-{iops}-{time}.json".format(
+                version=MONGODB_VERSION,iops=iops,time=time.time())
         else:
-            fname = "mongodb-standard-{version}-{iops}-{date}.json".format(
-                version=MONGODB_VERSION,iops=iops,date=datetime.now().isoformat())
+            fname = "mongodb-standard-{version}-{iops}-{time}.json".format(
+                version=MONGODB_VERSION,iops=iops,time=time.time())
 
         ftemplate = open(fname, 'w')
         ftemplate.write(template)
         ftemplate.close()
-
 
     stackid = deploy_template(
         template,

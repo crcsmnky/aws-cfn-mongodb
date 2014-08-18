@@ -42,7 +42,7 @@ def cleanup(instanceid, delete_volumes=True):
             try:
                 volume.delete()
             except Exception, e:
-                print(e)
+                print("### Caught exception:\n{exception}\n".format(exception=e))
 
     print("## Cleanup Complete")
 

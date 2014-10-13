@@ -74,7 +74,7 @@ STORAGE_MAP = {
 }
 
 
-MONGODB_VERSION = "2.6.4"
+MONGODB_VERSION = "2.6.5"
 AWS_MARKETPLACE_ACCOUNT = "679593333241"
 
 
@@ -192,9 +192,9 @@ def deploy_template(template, enterprise=False, iops=1000):
     print("## Deploying CloudFormation Template")
 
     if enterprise is False:
-        stackname = "MongoDB-26-{iops}-IOPS".format(iops=iops)
+        stackname = "MongoDB-{version}-{iops}-IOPS".format(version=MONGODB_VERSION.replace('.',''), iops=iops)
     else:
-        stackname = "MongoDB-Standard-26-{iops}-IOPS".format(iops=iops)
+        stackname = "MongoDB-Standard-{version}-{iops}-IOPS".format(version=MONGODB_VERSION.replace('.',''), iops=iops)
 
     cfcn = cfconnection.CloudFormationConnection()
     stackid = cfcn.create_stack(stack_name=stackname, template_body=template)
